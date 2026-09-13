@@ -6,7 +6,14 @@ Slateは既存のExcel帳票を原本のまま保ち、人とAIには入力可�
 
 ## Prototype
 
-依存関係はありません。`index.html` をブラウザで開くと、工事見積書を題材にしたフォームUIを確認できます。
+Node.js 18以降で依存パッケージを入れ、ローカルHTTPサーバーから開きます。
+
+```bash
+npm install
+python3 -m http.server 8080
+```
+
+`http://localhost:8080` をブラウザで開くと、工事見積書を題材にしたフォームUIを確認できます。
 
 ```text
 Excelテンプレート（固定）
