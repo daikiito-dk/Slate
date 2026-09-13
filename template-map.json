@@ -1,0 +1,32 @@
+{
+  "id": "slate-construction-estimate-landscape-v1",
+  "name": "工事見積書（階層あり・横）",
+  "source": {
+    "file": "工事見積書(階層あり)_横.xlsx",
+    "sheets": ["表紙", "内訳"],
+    "preserve": ["styles", "mergedCells", "formulas", "printSettings", "drawings", "externalLinks"]
+  },
+  "writePolicy": {
+    "mode": "whitelist",
+    "recalculate": true,
+    "externalLinks": "never-update",
+    "saveAsNewFile": true
+  },
+  "fields": [
+    { "id": "recipient", "label": "宛先", "sheet": "表紙", "range": "A4:I4", "type": "text", "required": true },
+    { "id": "issue_date", "label": "発行日", "sheet": "表紙", "range": "W4:AC4", "type": "date", "status": "review_required" },
+    { "id": "project_name", "label": "工事名", "sheet": "表紙", "range": "A9:O9", "type": "text", "required": true },
+    { "id": "issuer_address", "label": "発行元住所", "sheet": "表紙", "range": "V5:AB5", "type": "text", "status": "review_required" },
+    { "id": "issuer_name", "label": "発行元社名", "sheet": "表紙", "range": "V7:AB7", "type": "text", "status": "review_required" }
+  ],
+  "detailRows": {
+    "sheet": "内訳",
+    "groups": [
+      { "id": "section_1", "nameRange": "B4:D4", "detailRows": [5, 6, 7, 8, 9], "subtotalCell": "I10" },
+      { "id": "section_2", "nameRange": "B12:D12", "detailRows": [13, 14, 15, 16, 17], "subtotalCell": "I18" },
+      { "id": "section_3", "nameRange": "B20:D20", "detailRows": [21, 22, 23, 24, 25], "subtotalCell": "I26" }
+    ],
+    "editable": ["name", "description", "quantity", "unit", "unit_price"],
+    "calculated": ["amount", "subtotal", "tax", "total"]
+  }
+}

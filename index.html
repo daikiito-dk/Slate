@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slate — Excel帳票を、壊れないAI入力フォームへ</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#"><span class="brand-mark">S</span> Slate</a>
+      <span class="template">工事見積書（階層あり・横）</span>
+      <span class="local"><i></i> この端末に保存</span>
+    </header>
+
+    <main>
+      <aside class="rail">
+        <button class="rail-item active">入力フォーム</button>
+        <button class="rail-item">帳票プレビュー</button>
+        <button class="rail-item">変更履歴</button>
+      </aside>
+
+      <section class="editor">
+        <div class="section-heading">
+          <div><p class="eyebrow">DRAFT / 2026-09-14</p><h1>工事見積</h1></div>
+          <button id="download" class="secondary">Markdownを書き出す</button>
+        </div>
+
+        <form id="estimate-form">
+          <section class="card">
+            <h2>基本情報</h2>
+            <div class="field-grid">
+              <label>宛先<input name="recipient" value="株式会社サンプル" /></label>
+              <label>発行日<input name="issueDate" type="date" value="2026-09-14" /></label>
+              <label class="span-2">工事名<input name="projectName" value="サンプルオフィス改修工事" /></label>
+            </div>
+          </section>
+
+          <section id="breakdown" class="card">
+            <div class="card-title"><div><h2>工事内訳</h2><p>入力可能な値のみ編集できます。金額は数式で計算されます。</p></div><span class="locked">数式・書式は固定</span></div>
+          </section>
+        </form>
+      </section>
+
+      <aside class="context">
+        <section class="summary card">
+          <p class="eyebrow">ESTIMATE TOTAL</p>
+          <strong id="total">¥0</strong>
+          <div><span>工事価格</span><b id="subtotal">¥0</b></div>
+          <div><span>消費税（10%）</span><b id="tax">¥0</b></div>
+        </section>
+        <section class="card ai-card">
+          <div class="card-title"><h2>AI用データ</h2><span class="local-pill">LOCAL</span></div>
+          <p>AIは、固定テンプレートではなく入力値だけを読み書きします。</p>
+          <pre id="markdown-preview"></pre>
+        </section>
+      </aside>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
