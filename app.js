@@ -12,6 +12,7 @@ const sections = [
 ];
 
 let sourceWorkbook = null;
+let sourceWorkbookName = null;
 const spreadsheetNs = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 const officeRelNs = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const packageRelNs = 'http://schemas.openxmlformats.org/package/2006/relationships';
@@ -157,9 +158,15 @@ async function exportWorkbook() {
     zip.file('xl/workbook.xml', updateCalcSettings(await zip.file('xl/workbook.xml').async('text')));
 
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-    const name = sourceWorkbook.name.replace(/\.xlsx$/i, '') || 'estimate';
-    const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `${name}-Slate.xlsx` });
-    link.click(); URL.revokeObjectURL(link.href);
+    const name = sourceWorkbookName.replace(/\.xlsx$/i, '') || 'estimate';
+    const suggestedName = `${name}-Slate.xlsx`;
+    if (window.slateDesktop) {
+      const saved = await window.slateDesktop.saveWorkbook({ bytes: new Uint8Array(await blob.arrayBuffer()), suggestedName });
+      if (!saved.canceled) window.alert(`Excelを書き出しました。\n${saved.filePath}`);
+    } else {
+      const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: suggestedName });
+      link.click(); URL.revokeObjectURL(link.href);
+    }
   } catch (error) {
     window.alert(`Excelを書き出せませんでした。${error.message}`);
   } finally {
@@ -167,12 +174,25 @@ async function exportWorkbook() {
   }
 }
 
+function setSourceWorkbook(data, name) {
+  sourceWorkbook = data;
+  sourceWorkbookName = name;
+  document.querySelector('#excel-export').disabled = false;
+  document.querySelector('.template').textContent = `${name} を読み込み済み`;
+}
+
 document.querySelector('#excel-file').addEventListener('change', event => {
   const [file] = event.target.files;
-  if (!file) return;
-  sourceWorkbook = file;
-  document.querySelector('#excel-export').disabled = false;
-  document.querySelector('.template').textContent = `${file.name} を読み込み済み`;
+  if (file) setSourceWorkbook(file, file.name);
+});
+document.querySelector('#excel-open').addEventListener('click', async () => {
+  if (!window.slateDesktop) return document.querySelector('#excel-file').click();
+  try {
+    const selected = await window.slateDesktop.openWorkbook();
+    if (selected) setSourceWorkbook(selected.bytes, selected.name);
+  } catch (error) {
+    window.alert(`Excelを開けませんでした。${error.message}`);
+  }
 });
 document.querySelector('#excel-export').addEventListener('click', exportWorkbook);
 refresh();

@@ -4,6 +4,17 @@
 
 Slateは既存のExcel帳票を原本のまま保ち、人とAIには入力可能な値だけを扱わせるローカルファーストの試作です。
 
+## macOSアプリ
+
+Apple Silicon Mac向けに、署名なしの `Slate.app` と配布用ZIPを生成できます。
+
+```bash
+npm install
+npm run dist:mac
+```
+
+成果物は `dist/` に作られます。初回起動時は、macOSのGatekeeperにより右クリックして「開く」を選ぶ必要があります。配布用の公証・署名とDMG化はまだ行っていません。
+
 ## Prototype
 
 Node.js 18以降で依存パッケージを入れ、ローカルHTTPサーバーから開きます。

@@ -2,11 +2,34 @@
   "name": "slate-excel-form",
   "version": "0.1.0",
   "private": true,
+  "author": "Daiki Ito",
+  "main": "main.js",
   "description": "Local-first, AI-ready forms for existing Excel templates.",
   "scripts": {
-    "test": "node --check app.js"
+    "test": "node --check app.js && node --check main.js && node --check preload.js",
+    "start": "electron .",
+    "dist:mac": "electron-builder --mac zip"
   },
   "dependencies": {
     "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3"
+  }
+  ,
+  "build": {
+    "appId": "com.daikiito.slate",
+    "productName": "Slate",
+    "copyright": "Copyright © 2026 Daiki Ito",
+    "files": [
+      "**/*",
+      "!output{,/**}",
+      "!dist{,/**}"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["zip"]
+    }
   }
 }
