@@ -1,6 +1,9 @@
 name: Publish npm package
 
 on:
+  pull_request:
+  push:
+    branches: [main]
   release:
     types: [published]
 
@@ -18,6 +21,7 @@ jobs:
       - run: npm test
 
   publish:
+    if: github.event_name == 'release' && github.event.action == 'published'
     needs: test
     runs-on: ubuntu-latest
     permissions:
