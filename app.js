@@ -11,6 +11,11 @@ const sections = [
   ]}
 ];
 
+let sourceWorkbook = null;
+const spreadsheetNs = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+const officeRelNs = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+const packageRelNs = 'http://schemas.openxmlformats.org/package/2006/relationships';
+
 const yen = value => new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(value || 0);
 const input = (value, field, type = 'text') => `<input data-field="${field}" type="${type}" value="${value ?? ''}" />`;
 
@@ -80,4 +85,94 @@ document.querySelector('#download').addEventListener('click', () => {
   const link = Object.assign(document.createElement('a'), { href: url, download: 'values.md' });
   link.click(); URL.revokeObjectURL(url);
 });
+
+function workbookSheetPath(zip, sheetName) {
+  return Promise.all([zip.file('xl/workbook.xml').async('text'), zip.file('xl/_rels/workbook.xml.rels').async('text')]).then(([workbookXml, relsXml]) => {
+    const workbook = new DOMParser().parseFromString(workbookXml, 'application/xml');
+    const rels = new DOMParser().parseFromString(relsXml, 'application/xml');
+    const sheet = [...workbook.getElementsByTagNameNS(spreadsheetNs, 'sheet')].find(node => node.getAttribute('name') === sheetName);
+    if (!sheet) throw new Error(`シート「${sheetName}」が見つかりません。`);
+    const relationshipId = sheet.getAttributeNS(officeRelNs, 'id');
+    const relationship = [...rels.getElementsByTagNameNS(packageRelNs, 'Relationship')].find(node => node.getAttribute('Id') === relationshipId);
+    if (!relationship) throw new Error(`シート「${sheetName}」の参照先が見つかりません。`);
+    return `xl/${relationship.getAttribute('Target').replace(/^\.\.\//, '')}`;
+  });
+}
+
+function firstCell(range) { return range.split(':')[0]; }
+
+function setCellValue(sheet, reference, value, kind = 'text') {
+  const rowNumber = reference.match(/\d+$/)[0];
+  let row = [...sheet.getElementsByTagNameNS(spreadsheetNs, 'row')].find(node => node.getAttribute('r') === rowNumber);
+  const sheetData = sheet.getElementsByTagNameNS(spreadsheetNs, 'sheetData')[0];
+  if (!row) {
+    row = sheet.createElementNS(spreadsheetNs, 'row'); row.setAttribute('r', rowNumber); sheetData.append(row);
+  }
+  let cell = [...row.getElementsByTagNameNS(spreadsheetNs, 'c')].find(node => node.getAttribute('r') === reference);
+  if (!cell) { cell = sheet.createElementNS(spreadsheetNs, 'c'); cell.setAttribute('r', reference); row.append(cell); }
+  [...cell.getElementsByTagNameNS(spreadsheetNs, 'v'), ...cell.getElementsByTagNameNS(spreadsheetNs, 'is'), ...cell.getElementsByTagNameNS(spreadsheetNs, 'f')].forEach(node => node.remove());
+  if (kind === 'number') {
+    cell.removeAttribute('t');
+    const node = sheet.createElementNS(spreadsheetNs, 'v'); node.textContent = String(Number(value) || 0); cell.append(node);
+    return;
+  }
+  cell.setAttribute('t', 'inlineStr');
+  const inlineString = sheet.createElementNS(spreadsheetNs, 'is');
+  const text = sheet.createElementNS(spreadsheetNs, 't'); text.textContent = value;
+  inlineString.append(text); cell.append(inlineString);
+}
+
+function updateCalcSettings(workbookXml) {
+  const document = new DOMParser().parseFromString(workbookXml, 'application/xml');
+  let calc = document.getElementsByTagNameNS(spreadsheetNs, 'calcPr')[0];
+  if (!calc) { calc = document.createElementNS(spreadsheetNs, 'calcPr'); document.documentElement.append(calc); }
+  calc.setAttribute('calcMode', 'auto'); calc.setAttribute('fullCalcOnLoad', '1'); calc.setAttribute('forceFullCalc', '1');
+  return new XMLSerializer().serializeToString(document);
+}
+
+async function exportWorkbook() {
+  if (!sourceWorkbook) return;
+  const exportButton = document.querySelector('#excel-export');
+  exportButton.disabled = true; exportButton.textContent = '書き出し中…';
+  try {
+    const zip = await JSZip.loadAsync(sourceWorkbook);
+    const [coverPath, breakdownPath] = await Promise.all([workbookSheetPath(zip, '表紙'), workbookSheetPath(zip, '内訳')]);
+    const cover = new DOMParser().parseFromString(await zip.file(coverPath).async('text'), 'application/xml');
+    setCellValue(cover, 'A4', valueFromForm('recipient'));
+    setCellValue(cover, 'W4', valueFromForm('issueDate'));
+    setCellValue(cover, 'A9', valueFromForm('projectName'));
+    zip.file(coverPath, new XMLSerializer().serializeToString(cover));
+
+    const breakdown = new DOMParser().parseFromString(await zip.file(breakdownPath).async('text'), 'application/xml');
+    const detailRows = [[5, 6, 7, 8, 9], [13, 14, 15, 16, 17], [21, 22, 23, 24, 25]];
+    sections.forEach((section, sectionIndex) => section.rows.forEach((row, rowIndex) => {
+      const targetRow = detailRows[sectionIndex][rowIndex];
+      setCellValue(breakdown, `B${targetRow}`, row[0]);
+      setCellValue(breakdown, `E${targetRow}`, row[1]);
+      setCellValue(breakdown, `F${targetRow}`, row[2], 'number');
+      setCellValue(breakdown, `G${targetRow}`, row[3]);
+      setCellValue(breakdown, `H${targetRow}`, row[4], 'number');
+    }));
+    zip.file(breakdownPath, new XMLSerializer().serializeToString(breakdown));
+    zip.file('xl/workbook.xml', updateCalcSettings(await zip.file('xl/workbook.xml').async('text')));
+
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    const name = sourceWorkbook.name.replace(/\.xlsx$/i, '') || 'estimate';
+    const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `${name}-Slate.xlsx` });
+    link.click(); URL.revokeObjectURL(link.href);
+  } catch (error) {
+    window.alert(`Excelを書き出せませんでした。${error.message}`);
+  } finally {
+    exportButton.disabled = false; exportButton.textContent = 'Excelを書き出す';
+  }
+}
+
+document.querySelector('#excel-file').addEventListener('change', event => {
+  const [file] = event.target.files;
+  if (!file) return;
+  sourceWorkbook = file;
+  document.querySelector('#excel-export').disabled = false;
+  document.querySelector('.template').textContent = `${file.name} を読み込み済み`;
+});
+document.querySelector('#excel-export').addEventListener('click', exportWorkbook);
 refresh();

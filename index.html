@@ -10,6 +10,7 @@
     <header class="topbar">
       <a class="brand" href="#"><span class="brand-mark">S</span> Slate</a>
       <span class="template">工事見積書（階層あり・横）</span>
+      <label class="file-control">Excelを開く<input id="excel-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" /></label>
       <span class="local"><i></i> この端末に保存</span>
     </header>
 
@@ -23,7 +24,7 @@
       <section class="editor">
         <div class="section-heading">
           <div><p class="eyebrow">DRAFT / 2026-09-14</p><h1>工事見積</h1></div>
-          <button id="download" class="secondary">Markdownを書き出す</button>
+          <div class="actions"><button id="download" type="button" class="secondary">Markdownを書き出す</button><button id="excel-export" type="button" class="primary" disabled>Excelを書き出す</button></div>
         </div>
 
         <form id="estimate-form">
@@ -56,6 +57,7 @@
         </section>
       </aside>
     </main>
+    <script src="node_modules/jszip/dist/jszip.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

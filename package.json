@@ -1,0 +1,12 @@
+{
+  "name": "slate-excel-form",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first, AI-ready forms for existing Excel templates.",
+  "scripts": {
+    "test": "node --check app.js"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
+  }
+}
